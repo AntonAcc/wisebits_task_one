@@ -1,0 +1,24 @@
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+###> symfony/phpunit-bridge ###
+.phpunit.result.cache
+/phpunit.xml
+###< symfony/phpunit-bridge ###
+
+# Symfony
+/var/
+/vendor/
+/.env.local
+.env.*.local
+/public/bundles/
+/node_modules/
+/build/
+/coverage/
+
+# PhpStorm
+.idea/
+*.iml
