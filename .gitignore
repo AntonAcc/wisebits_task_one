@@ -6,11 +6,10 @@
 
 ###> symfony/phpunit-bridge ###
 .phpunit.result.cache
-/phpunit.xml
 ###< symfony/phpunit-bridge ###
 
 # Symfony
-/var/
+/var/*
 /vendor/
 /.env.local
 .env.*.local

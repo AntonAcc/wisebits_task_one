@@ -10,10 +10,16 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
+use ApiPlatform\Metadata\Delete;
+use App\State\UserDeleteProcessor;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new Delete(processor: UserDeleteProcessor::class),
+    ]
+)]
 class User
 {
     #[ORM\Id]
