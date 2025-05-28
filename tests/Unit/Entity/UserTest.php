@@ -114,7 +114,6 @@ final class UserTest extends TestCase
 
         $reflectionClass = new \ReflectionClass(User::class);
         $deletedProperty = $reflectionClass->getProperty('deleted');
-        $deletedProperty->setAccessible(true);
 
         $createdDate = $user->getCreated();
         $invalidDeletedDate = $createdDate->modify('-1 hour');

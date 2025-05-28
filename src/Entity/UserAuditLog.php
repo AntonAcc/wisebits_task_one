@@ -17,8 +17,9 @@ class UserAuditLog
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::INTEGER)]
-    private int $userId;
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
+    private User $user;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $fieldName;
@@ -33,12 +34,12 @@ class UserAuditLog
     private \DateTimeImmutable $changedAt;
 
     public function __construct(
-        int $userId,
+        User $user,
         string $fieldName,
         ?string $oldValue,
         ?string $newValue
     ) {
-        $this->userId = $userId;
+        $this->user = $user;
         $this->fieldName = $fieldName;
         $this->oldValue = $oldValue;
         $this->newValue = $newValue;
@@ -50,9 +51,9 @@ class UserAuditLog
         return $this->id;
     }
 
-    public function getUserId(): int
+    public function getUser(): User
     {
-        return $this->userId;
+        return $this->user;
     }
 
     public function getFieldName(): string

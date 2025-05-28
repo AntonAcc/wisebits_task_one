@@ -32,12 +32,6 @@ final class UserAuditListener
             return;
         }
 
-        $userId = $entity->getId();
-
-        if ($userId === null) {
-            return;
-        }
-
         $changeSet = $args->getEntityChangeSet();
 
         foreach ($changeSet as $fieldName => $values) {
@@ -52,7 +46,7 @@ final class UserAuditListener
             }
 
             $auditLog = new UserAuditLog(
-                $userId,
+                $entity,
                 $fieldName,
                 $formattedOldValue,
                 $formattedNewValue
