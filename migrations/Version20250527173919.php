@@ -32,9 +32,6 @@ final class Version20250527173919 extends AbstractMigration
     {
         // this down() migration is auto-generated, please modify it to your needs
         $this->addSql(<<<'SQL'
-            CREATE SCHEMA public
-        SQL);
-        $this->addSql(<<<'SQL'
             DROP TABLE user_audit_logs
         SQL);
     }
