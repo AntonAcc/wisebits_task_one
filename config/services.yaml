@@ -20,5 +20,15 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\EventListener\UserRequestListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.view, priority: 10 }
+
+    App\Validator\Constraints\UniqueUserFieldsValidator:
+        arguments:
+            $em: '@doctrine.orm.entity_manager'
+        tags:
+            - { name: validator.constraint_validator }
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

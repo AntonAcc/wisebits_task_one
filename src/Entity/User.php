@@ -16,9 +16,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use ApiPlatform\Metadata\Delete;
 use App\State\UserDeleteProcessor;
+use App\Validator\Constraints\UniqueUserFields;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
+#[ORM\UniqueConstraint(columns: ['name', 'deleted'])]
+#[ORM\UniqueConstraint(columns: ['email', 'deleted'])]
 #[ApiResource(
      operations: [
          new GetCollection(),
@@ -28,6 +31,7 @@ use App\State\UserDeleteProcessor;
          new Delete(processor: UserDeleteProcessor::class),
      ]
 )]
+#[UniqueUserFields]
 class User
 {
     #[ORM\Id]
@@ -35,14 +39,14 @@ class User
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::STRING, length: 64, unique: true)]
+    #[ORM\Column(type: Types::STRING, length: 64)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 8, max: 64)]
     #[Assert\Regex(pattern: '/^[a-z0-9]+$/')]
     // TODO: Add validation for forbidden words
     private string $name;
 
-    #[ORM\Column(type: Types::STRING, length: 256, unique: true)]
+    #[ORM\Column(type: Types::STRING, length: 256)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 256)]
     #[Assert\Email]
