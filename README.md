@@ -15,6 +15,8 @@ https://github.com/AntonAcc/credit-app/blob/master/specifications.md
 ### Phpunit
 
 ```
+docker compose exec -T php bin/console doctrine:database:create --env=test
+docker compose exec -T php bin/console doctrine:migrations:migrate --env=test
 docker compose exec -T php bin/phpunit 
 ```
 
