@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace App\EventListener;
+
 use ApiPlatform\Metadata\Exception\ItemNotFoundException;
 use App\Entity\User;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
