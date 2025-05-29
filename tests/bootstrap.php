@@ -11,3 +11,6 @@ if (method_exists(Dotenv::class, 'bootEnv')) {
 if ($_SERVER['APP_DEBUG']) {
     umask(0000);
 }
+
+passthru('APP_ENV=test php bin/console doctrine:database:create --if-not-exists --env=test');
+passthru('APP_ENV=test php bin/console doctrine:migrations:migrate --no-interaction --env=test');
