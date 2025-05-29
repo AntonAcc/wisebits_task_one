@@ -9,10 +9,13 @@ use App\Entity\UserAuditLog;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\ORM\Event\PostPersistEventArgs;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\EntityManagerInterface;
+use ReflectionClass;
 
 #[AsDoctrineListener(event: Events::preUpdate, priority: 500, connection: 'default')]
+#[AsDoctrineListener(event: Events::postPersist, priority: 500, connection: 'default')]
 #[AsDoctrineListener(event: Events::postFlush, priority: 500, connection: 'default')]
 final class UserAuditListener
 {
@@ -22,6 +25,46 @@ final class UserAuditListener
     public function __construct(
         private readonly EntityManagerInterface $entityManager
     ) {
+    }
+
+    public function postPersist(PostPersistEventArgs $args): void
+    {
+        $entity = $args->getObject();
+
+        if (!$entity instanceof User) {
+            return;
+        }
+
+        $reflectionClass = new ReflectionClass($entity);
+        $properties = $reflectionClass->getProperties();
+
+        foreach ($properties as $property) {
+            if (in_array($property->getName(), ['id', 'deleted'])) {
+                continue;
+            }
+
+            $methodName = 'get' . ucfirst($property->getName());
+            if (method_exists($entity, $methodName)) {
+                $rawValue = $entity->{$methodName}();
+            } elseif (method_exists($entity, 'is' . ucfirst($property->getName()))) {
+                $methodName = 'is' . ucfirst($property->getName());
+                $rawValue = $entity->{$methodName}();
+            } else {
+                continue;
+            }
+
+            $formattedNewValue = $this->formatValue($rawValue);
+
+            if ($formattedNewValue !== null) {
+                $auditLog = new UserAuditLog(
+                    $entity,
+                    $property->getName(),
+                    null,
+                    $formattedNewValue
+                );
+                $this->pendingLogs[] = $auditLog;
+            }
+        }
     }
 
     public function preUpdate(PreUpdateEventArgs $args): void

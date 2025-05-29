@@ -6,3 +6,5 @@ api_platform:
         cache_headers:
             vary: ['Content-Type', 'Authorization', 'Origin']
         validation_groups: ['Default']
+        normalization_context:
+            skip_null_values: false
