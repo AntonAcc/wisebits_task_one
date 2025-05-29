@@ -116,7 +116,7 @@ final class UserAuditListener
     private function formatValue(mixed $value): ?string
     {
         if ($value instanceof \DateTimeInterface) {
-            return $value->format('Y-m-d H:i:s.u P');
+            return $value->format('Y-m-d H:i:s P');
         }
 
         if (is_object($value) && method_exists($value, '__toString')) {

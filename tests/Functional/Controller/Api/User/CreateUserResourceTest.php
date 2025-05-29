@@ -4,71 +4,20 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Controller\Api\User;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use App\Entity\User;
-use App\Repository\UserAuditLogRepository;
-use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
-use DateTimeImmutable;
 
-final class CreateUserResourceTest extends ApiTestCase
+final class CreateUserResourceTest extends TestUserResourceAbstract
 {
-    private ?EntityManagerInterface $entityManager;
-    private ?UserRepository $userRepository;
-    private ?UserAuditLogRepository $userAuditLogRepository;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $container = static::getContainer();
-        $this->entityManager = $container->get(EntityManagerInterface::class);
-        $this->userRepository = $container->get(UserRepository::class);
-        $this->userAuditLogRepository = $container->get(UserAuditLogRepository::class);
-
-        // Очищаем таблицу пользователей перед каждым функциональным тестом
-        $this->truncateEntities([User::class, \App\Entity\UserAuditLog::class]);
-    }
-
-    private function truncateEntities(array $entityClasses): void
-    {
-        if (!$this->entityManager) {
-            return;
-        }
-        $connection = $this->entityManager->getConnection();
-        $platform = $connection->getDatabasePlatform();
-
-        foreach ($entityClasses as $entityClass) {
-            $cmd = $this->entityManager->getClassMetadata($entityClass);
-            $connection->executeStatement($platform->getTruncateTableSQL($cmd->getTableName(), true /* CASCADE */));
-        }
-    }
-
-    protected function tearDown(): void
-    {
-        // Ensure to clear the entity manager to avoid state leakage between tests
-        if ($this->entityManager !== null) {
-            $this->entityManager->clear();
-            $this->entityManager = null; // avoid memory leaks
-        }
-        
-        $this->userRepository = null; // avoid memory leaks
-        $this->userAuditLogRepository = null; // avoid memory leaks
-        
-        parent::tearDown();
-    }
-
     public function testCreateUser(): void
     {
-        $client = static::createClient();
-
         $userData = [
             'name' => 'testusercreate',
             'email' => 'test.user.create@example.com',
             'notes' => 'Initial notes for creation test.',
         ];
 
-        $response = $client->request('POST', '/api/users', [
+        $response = $this->apiTestClient->request('POST', '/api/users', [
             'json' => $userData,
             'headers' => [
                 'Content-Type' => 'application/ld+json',
@@ -105,16 +54,10 @@ final class CreateUserResourceTest extends ApiTestCase
         $this->assertNotNull($dbUser->getCreated());
         $this->assertNull($dbUser->getDeleted());
 
-        $auditLogs = $this->userAuditLogRepository->findBy(['user' => $dbUser], ['changedAt' => 'ASC']);
-        
-        $expectedAuditFields = ['name', 'email', 'created'];
-        if (!empty($userData['notes'])) {
-            $expectedAuditFields[] = 'notes';
-             $this->assertCount(4, $auditLogs); 
-        } else {
-            $this->assertCount(3, $auditLogs);
-        }
-        
+        $auditLogs = $this->userAuditLogRepository->findBy(['user' => $dbUser]);
+
+        $this->assertCount(4, $auditLogs);
+
         $loggedFields = [];
         foreach ($auditLogs as $log) {
             $loggedFields[] = $log->getFieldName();
@@ -122,17 +65,18 @@ final class CreateUserResourceTest extends ApiTestCase
             $this->assertNotNull($log->getNewValue());
             $this->assertSame($dbUser->getId(), $log->getUser()->getId());
 
-            if ($log->getFieldName() === 'name') {
-                $this->assertSame($userData['name'], $log->getNewValue());
-            } elseif ($log->getFieldName() === 'email') {
-                $this->assertSame($userData['email'], $log->getNewValue());
-            } elseif ($log->getFieldName() === 'created') {
-                $this->assertSame($dbUser->getCreated()->format('Y-m-d H:i:s P'), DateTimeImmutable::createFromFormat('Y-m-d H:i:s.u P', $log->getNewValue())->format('Y-m-d H:i:s P'));
-            } elseif ($log->getFieldName() === 'notes') {
-                 $this->assertSame($userData['notes'], $log->getNewValue());
-            }
+            $this->assertSame(
+                match($log->getFieldName()) {
+                    'name' => $userData['name'],
+                    'email' => $userData['email'],
+                    'notes' => $userData['notes'],
+                    'created' => $dbUser->getCreated()->format('Y-m-d H:i:s P'),
+                },
+                $log->getNewValue()
+            );
         }
-        
+
+        $expectedAuditFields = ['name', 'email', 'created', 'notes'];
         foreach ($expectedAuditFields as $expectedField) {
             $this->assertContains($expectedField, $loggedFields, "Audit log for field '{$expectedField}' is missing.");
         }
