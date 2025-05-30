@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Entity\UserTest;
 
+use App\Validator\Constraints\NotForbiddenWords;
 use App\Validator\Constraints\UniqueUserFields;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidatorFactoryInterface;
@@ -16,7 +17,8 @@ class MockConstraintValidatorFactory implements ConstraintValidatorFactoryInterf
 
     public function __construct()
     {
-        $this->validators[UniqueUserFields::class] = new MockUniqueUserFieldsValidator();
+        $this->validators[UniqueUserFields::class] = new StubValidator();
+        $this->validators[NotForbiddenWords::class] = new StubValidator();
         $this->defaultFactory = new \Symfony\Component\Validator\ConstraintValidatorFactory();
     }
 

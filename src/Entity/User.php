@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
+use App\Validator\Constraints\NotForbiddenWords;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -43,7 +44,7 @@ class User
     #[Assert\NotBlank]
     #[Assert\Length(min: 8, max: 64)]
     #[Assert\Regex(pattern: '/^[a-z0-9]+$/')]
-    // TODO: Add validation for forbidden words
+    #[NotForbiddenWords]
     private string $name;
 
     #[ORM\Column(type: Types::STRING, length: 256)]
