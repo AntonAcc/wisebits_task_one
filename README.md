@@ -1,4 +1,4 @@
-# Test Assignment - Credit App
+# Test Assignment - User App
 
 ## Assignment specifications:
 
