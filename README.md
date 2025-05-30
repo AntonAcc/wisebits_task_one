@@ -2,7 +2,7 @@
 
 ## Assignment specifications:
 
-https://github.com/AntonAcc/credit-app/blob/master/specifications.md
+https://github.com/AntonAcc/wisebits_task_one/blob/master/specifications.md
 
 ## Testing:
 
