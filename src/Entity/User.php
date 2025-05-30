@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
+use App\Validator\Constraints\AllowedEmailDomains;
 use App\Validator\Constraints\NotForbiddenWords;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -51,7 +52,7 @@ class User
     #[Assert\NotBlank]
     #[Assert\Length(max: 256)]
     #[Assert\Email]
-    // TODO: Add validation for untrusted domains
+    #[AllowedEmailDomains]
     private string $email;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
