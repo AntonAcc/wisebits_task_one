@@ -30,6 +30,7 @@ doctrine:
             soft_deleteable:
                 class: App\Doctrine\Filter\SoftDeleteableFilter
                 enabled: true
+
 when@test:
     doctrine:
         dbal:

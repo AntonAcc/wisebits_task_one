@@ -57,4 +57,14 @@ abstract class TestUserResourceAbstract extends ApiTestCase
 
         parent::tearDown();
     }
+
+    protected function disableFilters(): void
+    {
+        $this->entityManager->getFilters()->disable('soft_deleteable');
+    }
+
+    protected function enableFilters(): void
+    {
+        $this->entityManager->getFilters()->enable('soft_deleteable');
+    }
 }
