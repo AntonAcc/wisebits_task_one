@@ -65,21 +65,5 @@ final class GetUserResourceTest extends TestUserResourceAbstract
         $response = $this->apiTestClient->request('GET', '/api/users/' . $userId);
 
         $this->assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
-//        $this->assertResponseHeaderSame('content-type', 'application/ld+json; charset=utf-8');
-
-//        $responseData = $response->toArray();
-//
-//        $this->assertSame($userId, $responseData['id']);
-//        $this->assertSame($name, $responseData['name']);
-//        $this->assertSame($email, $responseData['email']);
-//        $this->assertSame($notes, $responseData['notes']);
-//        $this->assertNotNull($responseData['created']);
-//        $this->assertSame($createdDate->format('Y-m-d H:i:s P'), (new \DateTimeImmutable($responseData['created']))->format('Y-m-d H:i:s P'));
-//        $this->assertArrayHasKey('deleted', $responseData, "The 'deleted' key should exist in the response.");
-//        $this->assertNull($responseData['deleted'], "The 'deleted' field should be null for a new user.");
-//
-//        // Verify no audit logs were created for a GET request
-//        $auditLogs = $this->userAuditLogRepository->findBy(['user' => $userId]);
-//        $this->assertCount(0, $auditLogs, 'No audit logs should be created for a GET request.');
     }
 }
