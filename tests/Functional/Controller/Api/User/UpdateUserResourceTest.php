@@ -4,74 +4,24 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Controller\Api\User;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use App\Entity\User;
-use App\Repository\UserAuditLogRepository;
-use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\UserAuditLog;
 use Symfony\Component\HttpFoundation\Response;
 
-final class UpdateUserResourceTest extends ApiTestCase
+final class UpdateUserResourceTest extends  TestUserResourceAbstract
 {
-    private ?EntityManagerInterface $entityManager;
-    private ?UserRepository $userRepository;
-    private ?UserAuditLogRepository $userAuditLogRepository;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $container = static::getContainer();
-        $this->entityManager = $container->get(EntityManagerInterface::class);
-        $this->userRepository = $container->get(UserRepository::class);
-        $this->userAuditLogRepository = $container->get(UserAuditLogRepository::class);
-
-        $this->truncateEntities([User::class, \App\Entity\UserAuditLog::class]);
-    }
-
-    private function truncateEntities(array $entityClasses): void
-    {
-        if (!$this->entityManager) {
-            return;
-        }
-        $connection = $this->entityManager->getConnection();
-        $platform = $connection->getDatabasePlatform();
-
-        foreach ($entityClasses as $entityClass) {
-            $cmd = $this->entityManager->getClassMetadata($entityClass);
-            $connection->executeStatement($platform->getTruncateTableSQL($cmd->getTableName(), true));
-        }
-    }
-
-    protected function tearDown(): void
-    {
-        if ($this->entityManager !== null) {
-            $this->entityManager->clear();
-            $this->entityManager = null;
-        }
-        $this->userRepository = null;
-        $this->userAuditLogRepository = null;
-        parent::tearDown();
-    }
 
     public function testUpdateUser(): void
     {
-        $client = static::createClient();
-
         $initialName = 'originaluser';
         $initialEmail = 'original.user@example.com';
         $initialNotes = 'Initial notes.';
         
         $user = new User($initialName, $initialEmail, $initialNotes);
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-        $this->entityManager->clear();
+        $this->userRepository->save($user);
+        $userId = $user->getId();
 
-        /** @var User $userToUpdate */
-        $userToUpdate = $this->userRepository->findOneBy(['email' => $initialEmail]); 
-        $this->assertNotNull($userToUpdate, 'Failed to create user for update test.');
-        $userId = $userToUpdate->getId();
-
-        $this->truncateEntities([\App\Entity\UserAuditLog::class]);
+        $this->truncateEntities([UserAuditLog::class]);
 
         $updatedName = 'updateduser';
         $updatedNotes = 'Updated notes.';
@@ -80,7 +30,7 @@ final class UpdateUserResourceTest extends ApiTestCase
             'notes' => $updatedNotes,
         ];
 
-        $response = $client->request('PATCH', '/api/users/' . $userId, [
+        $response = $this->apiTestClient->request('PATCH', '/api/users/' . $userId, [
             'json' => $updateData,
             'headers' => [
                 'Content-Type' => 'application/merge-patch+json',
@@ -97,15 +47,9 @@ final class UpdateUserResourceTest extends ApiTestCase
         $this->assertNotNull($responseData['created']);
         $this->assertNull($responseData['deleted']);
 
-        $freshEntityManager = static::getContainer()->get(EntityManagerInterface::class);
-        /** @var UserRepository $freshUserRepository */
-        $freshUserRepository = static::getContainer()->get(UserRepository::class);
-
         /** @var User|null $dbUser */
-        $dbUser = $freshUserRepository->find($userId);
+        $dbUser = $this->getFreshUserRepository()->find($userId);
         $this->assertNotNull($dbUser, 'User not found in DB with fresh EM.');
-        
-        $freshEntityManager->refresh($dbUser);
 
         $this->assertSame($updatedName, $dbUser->getName(), 'Name in DB was not updated.');
         $this->assertSame($initialEmail, $dbUser->getEmail(), 'Email in DB should not have changed.');
@@ -133,5 +77,38 @@ final class UpdateUserResourceTest extends ApiTestCase
             unset($expectedChanges[$fieldName]); 
         }
         $this->assertEmpty($expectedChanges, 'Not all expected fields were found in audit logs.');
+    }
+
+    public function testGetDeletedUser(): void
+    {
+        $name = 'gettestuser';
+        $email = 'get.test.user@example.com';
+        $notes = 'Some notes for get test.';
+
+        $user = new User($name, $email, $notes);
+        $user->setDeleted();
+        $this->userRepository->save($user);
+        $userId = $user->getId();
+        $this->entityManager->clear();
+
+        // Clear audit logs from creation before making the GET request
+        $this->truncateEntities([UserAuditLog::class]);
+
+        $updatedName = 'updateduser';
+        $updatedNotes = 'Updated notes.';
+        $updateData = [
+            'name' => $updatedName,
+            'notes' => $updatedNotes,
+        ];
+
+        $response = $this->apiTestClient->request('PATCH', '/api/users/' . $userId, [
+            'json' => $updateData,
+            'headers' => [
+                'Content-Type' => 'application/merge-patch+json',
+                'Accept' => 'application/ld+json',
+            ]
+        ]);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
 } 

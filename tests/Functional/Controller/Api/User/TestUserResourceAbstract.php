@@ -67,4 +67,9 @@ abstract class TestUserResourceAbstract extends ApiTestCase
     {
         $this->entityManager->getFilters()->enable('soft_deleteable');
     }
+
+    protected function getFreshUserRepository(): UserRepository
+    {
+        return static::getContainer()->get(UserRepository::class);
+    }
 }
