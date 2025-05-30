@@ -8,7 +8,7 @@ use App\Entity\User;
 use App\Entity\UserAuditLog;
 use Symfony\Component\HttpFoundation\Response;
 
-final class UpdateUserResourceTest extends  TestUserResourceAbstract
+final class UpdateUserResourceTest extends TestUserResourceAbstract
 {
 
     public function testUpdateUser(): void
@@ -47,8 +47,10 @@ final class UpdateUserResourceTest extends  TestUserResourceAbstract
         $this->assertNotNull($responseData['created']);
         $this->assertNull($responseData['deleted']);
 
+        $this->refreshEntityManager();
+
         /** @var User|null $dbUser */
-        $dbUser = $this->getFreshUserRepository()->find($userId);
+        $dbUser = $this->userRepository->find($userId);
         $this->assertNotNull($dbUser, 'User not found in DB with fresh EM.');
 
         $this->assertSame($updatedName, $dbUser->getName(), 'Name in DB was not updated.');
@@ -89,9 +91,7 @@ final class UpdateUserResourceTest extends  TestUserResourceAbstract
         $user->setDeleted();
         $this->userRepository->save($user);
         $userId = $user->getId();
-        $this->entityManager->clear();
 
-        // Clear audit logs from creation before making the GET request
         $this->truncateEntities([UserAuditLog::class]);
 
         $updatedName = 'updateduser';

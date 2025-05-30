@@ -21,9 +21,7 @@ final class GetUserResourceTest extends TestUserResourceAbstract
         $this->entityManager->flush();
         $userId = $user->getId();
         $createdDate = $user->getCreated();
-        $this->entityManager->clear();
 
-        // Clear audit logs from creation before making the GET request
         $this->truncateEntities([UserAuditLog::class]);
 
         $response = $this->apiTestClient->request('GET', '/api/users/' . $userId);
@@ -57,7 +55,6 @@ final class GetUserResourceTest extends TestUserResourceAbstract
         $user->setDeleted();
         $this->userRepository->save($user);
         $userId = $user->getId();
-        $this->entityManager->clear();
 
         // Clear audit logs from creation before making the GET request
         $this->truncateEntities([UserAuditLog::class]);

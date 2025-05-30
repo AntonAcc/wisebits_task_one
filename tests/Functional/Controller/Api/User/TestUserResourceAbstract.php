@@ -22,10 +22,9 @@ abstract class TestUserResourceAbstract extends ApiTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $container = static::getContainer();
-        $this->entityManager = $container->get(EntityManagerInterface::class);
-        $this->userRepository = $container->get(UserRepository::class);
-        $this->userAuditLogRepository = $container->get(UserAuditLogRepository::class);
+        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $this->userRepository = $this->entityManager->getRepository(User::class);
+        $this->userAuditLogRepository = $this->entityManager->getRepository(UserAuditLog::class);
 
         $this->truncateEntities([User::class, UserAuditLog::class]);
 
@@ -68,8 +67,10 @@ abstract class TestUserResourceAbstract extends ApiTestCase
         $this->entityManager->getFilters()->enable('soft_deleteable');
     }
 
-    protected function getFreshUserRepository(): UserRepository
+    protected function refreshEntityManager(): void
     {
-        return static::getContainer()->get(UserRepository::class);
+        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $this->userRepository = $this->entityManager->getRepository(User::class);
+        $this->userAuditLogRepository = $this->entityManager->getRepository(UserAuditLog::class);
     }
 }
