@@ -21,7 +21,9 @@ readonly class UserDeleteProcessor implements ProcessorInterface
             return;
         }
 
-        $data->setDeleted();
-        $this->entityManager->flush();
+        if ($data->getDeleted() === null) {
+            $data->setDeleted();
+            $this->entityManager->flush();
+        }
     }
 }
