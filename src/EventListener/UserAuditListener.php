@@ -7,110 +7,66 @@ namespace App\EventListener;
 use App\Entity\User;
 use App\Entity\UserAuditLog;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
-use Doctrine\ORM\Event\PostFlushEventArgs;
-use Doctrine\ORM\Event\PreUpdateEventArgs;
-use Doctrine\ORM\Event\PostPersistEventArgs;
+use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Events;
-use Doctrine\ORM\EntityManagerInterface;
 use ReflectionClass;
 
-#[AsDoctrineListener(event: Events::preUpdate, priority: 500, connection: 'default')]
-#[AsDoctrineListener(event: Events::postPersist, priority: 500, connection: 'default')]
-#[AsDoctrineListener(event: Events::postFlush, priority: 500, connection: 'default')]
+#[AsDoctrineListener(event: Events::onFlush, priority: 500, connection: 'default')]
 final class UserAuditListener
 {
-    /** @var UserAuditLog[] */
-    private array $pendingLogs = [];
-
-    public function __construct(
-        private readonly EntityManagerInterface $entityManager
-    ) {
-    }
-
-    public function postPersist(PostPersistEventArgs $args): void
+    public function onFlush(OnFlushEventArgs $args): void
     {
-        $entity = $args->getObject();
+        $em = $args->getObjectManager();
+        $uow = $em->getUnitOfWork();
 
-        if (!$entity instanceof User) {
-            return;
-        }
-
-        $reflectionClass = new ReflectionClass($entity);
-        $properties = $reflectionClass->getProperties();
-
-        foreach ($properties as $property) {
-            if (in_array($property->getName(), ['id', 'deleted'])) {
+        foreach ($uow->getScheduledEntityInsertions() as $entity) {
+            if (!$entity instanceof User) {
                 continue;
             }
 
-            $methodName = 'get' . ucfirst($property->getName());
-            if (method_exists($entity, $methodName)) {
-                $rawValue = $entity->{$methodName}();
-            } elseif (method_exists($entity, 'is' . ucfirst($property->getName()))) {
-                $methodName = 'is' . ucfirst($property->getName());
-                $rawValue = $entity->{$methodName}();
-            } else {
+            $reflection = new ReflectionClass($entity);
+            foreach ($reflection->getProperties() as $property) {
+                if (in_array($property->getName(), ['id', 'deleted'], true)) {
+                    continue;
+                }
+
+                $getter = 'get' . ucfirst($property->getName());
+                if (!method_exists($entity, $getter)) {
+                    $getter = 'is' . ucfirst($property->getName());
+                    if (!method_exists($entity, $getter)) {
+                        continue;
+                    }
+                }
+
+                $newValue = $this->formatValue($entity->$getter());
+
+                if ($newValue !== null) {
+                    $log = new UserAuditLog($entity, $property->getName(), null, $newValue);
+                    $em->persist($log);
+                    $uow->computeChangeSet($em->getClassMetadata(UserAuditLog::class), $log);
+                }
+            }
+        }
+
+        foreach ($uow->getScheduledEntityUpdates() as $entity) {
+            if (!$entity instanceof User) {
                 continue;
             }
 
-            $formattedNewValue = $this->formatValue($rawValue);
+            $changeSet = $uow->getEntityChangeSet($entity);
+            foreach ($changeSet as $field => [$oldValue, $newValue]) {
+                $oldFormatted = $this->formatValue($oldValue);
+                $newFormatted = $this->formatValue($newValue);
 
-            if ($formattedNewValue !== null) {
-                $auditLog = new UserAuditLog(
-                    $entity,
-                    $property->getName(),
-                    null,
-                    $formattedNewValue
-                );
-                $this->pendingLogs[] = $auditLog;
+                if ($oldFormatted === $newFormatted) {
+                    continue;
+                }
+
+                $log = new UserAuditLog($entity, $field, $oldFormatted, $newFormatted);
+                $em->persist($log);
+                $uow->computeChangeSet($em->getClassMetadata(UserAuditLog::class), $log);
             }
         }
-    }
-
-    public function preUpdate(PreUpdateEventArgs $args): void
-    {
-        $entity = $args->getObject();
-
-        if (!$entity instanceof User) {
-            return;
-        }
-
-        $changeSet = $args->getEntityChangeSet();
-
-        foreach ($changeSet as $fieldName => $values) {
-            $rawOldValue = $values[0];
-            $rawNewValue = $values[1];
-
-            $formattedOldValue = $this->formatValue($rawOldValue);
-            $formattedNewValue = $this->formatValue($rawNewValue);
-            
-            if ($formattedOldValue === $formattedNewValue) {
-                continue;
-            }
-
-            $auditLog = new UserAuditLog(
-                $entity,
-                $fieldName,
-                $formattedOldValue,
-                $formattedNewValue
-            );
-            $this->pendingLogs[] = $auditLog;
-        }
-    }
-
-    public function postFlush(PostFlushEventArgs $args): void
-    {
-        if (empty($this->pendingLogs)) {
-            return;
-        }
-
-        foreach ($this->pendingLogs as $logEntry) {
-            $this->entityManager->persist($logEntry);
-        }
-        
-        $this->pendingLogs = [];
-        
-        $this->entityManager->flush();
     }
 
     private function formatValue(mixed $value): ?string
