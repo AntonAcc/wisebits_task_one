@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
+use App\State\UserPatchProcessor;
 use App\Validator\Constraints\AllowedEmailDomains;
 use App\Validator\Constraints\NotForbiddenWords;
 use Doctrine\DBAL\Types\Types;
@@ -29,7 +30,7 @@ use App\Validator\Constraints\UniqueUserFields;
          new GetCollection(),
          new Get(),
          new Post(),
-         new Patch(),
+         new Patch(processor: UserPatchProcessor::class),
          new Delete(processor: UserDeleteProcessor::class),
      ]
 )]
