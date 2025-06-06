@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+    <entity name="App\Entity\UserAuditLog" table="user_audit_logs" repository-class="App\Repository\UserAuditLogRepository">
+        <id name="id" type="integer" column="id">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <many-to-one field="user" target-entity="App\Entity\User" fetch="LAZY">
+            <join-column name="user_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+            <cascade>
+                <cascade-persist/>
+            </cascade>
+        </many-to-one>
+
+        <field name="fieldName" column="field_name" type="string" length="255" nullable="false"/>
+        <field name="oldValue" column="old_value" type="text" nullable="true"/>
+        <field name="newValue" column="new_value" type="text" nullable="true"/>
+        <field name="changedAt" column="changed_at" type="datetime_immutable" nullable="false"/>
+    </entity>
+
+</doctrine-mapping> 

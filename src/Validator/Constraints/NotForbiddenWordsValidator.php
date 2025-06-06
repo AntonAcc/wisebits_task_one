@@ -13,13 +13,17 @@ use Symfony\Component\Validator\Exception\UnexpectedValueException;
 class NotForbiddenWordsValidator extends ConstraintValidator
 {
     public function __construct(
-        private ForbiddenWordsServiceInterface $forbiddenWordsService
+        private readonly ForbiddenWordsServiceInterface $forbiddenWordsService
     ) {}
 
     public function validate(mixed $value, Constraint $constraint): void
     {
         if (!$constraint instanceof NotForbiddenWords) {
             throw new UnexpectedTypeException($constraint, NotForbiddenWords::class);
+        }
+
+        if ($value === null) {
+            return;
         }
 
         if (!is_string($value)) {

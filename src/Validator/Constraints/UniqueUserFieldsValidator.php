@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Validator\Constraints;
 
+use App\Dto\Input\UserCreateDto;
+use App\Dto\Input\UserUpdateDto;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Validator\Constraint;
@@ -21,21 +23,21 @@ class UniqueUserFieldsValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, UniqueUserFields::class);
         }
 
-        if (!$value instanceof User) {
-            throw new UnexpectedValueException($value, User::class);
+        if (!$value instanceof UserCreateDto) {
+            throw new UnexpectedValueException($value, UserCreateDto::class);
         }
 
         $repo = $this->em->getRepository(User::class);
 
-        $conflictEmail = $repo->findOneBy(['email' => $value->getEmail()]);
-        if ($conflictEmail && $conflictEmail->getId() !== $value->getId()) {
+        $conflictEmail = $repo->findOneBy(['email' => $value->email]);
+        if ($conflictEmail) {
             $this->context->buildViolation($constraint->emailMessage)
                 ->atPath('email')
                 ->addViolation();
         }
 
-        $conflictName = $repo->findOneBy(['name' => $value->getName()]);
-        if ($conflictName && $conflictName->getId() !== $value->getId()) {
+        $conflictName = $repo->findOneBy(['name' => $value->name]);
+        if ($conflictName) {
             $this->context->buildViolation($constraint->nameMessage)
                 ->atPath('name')
                 ->addViolation();

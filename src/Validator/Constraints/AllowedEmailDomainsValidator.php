@@ -14,13 +14,17 @@ use Symfony\Component\Validator\Exception\UnexpectedValueException;
 class AllowedEmailDomainsValidator extends ConstraintValidator
 {
     public function __construct(
-        private NotAllowedEmailDomainsServiceInterface $notAllowedEmailDomainsService
+        private readonly NotAllowedEmailDomainsServiceInterface $notAllowedEmailDomainsService
     ) {}
 
     public function validate(mixed $value, Constraint $constraint): void
     {
         if (!$constraint instanceof AllowedEmailDomains) {
             throw new UnexpectedTypeException($constraint, AllowedEmailDomains::class);
+        }
+
+        if ($value === null) {
+            return;
         }
 
         if (!is_string($value)) {

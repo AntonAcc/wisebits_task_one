@@ -1,0 +1,15 @@
+resources:
+  App\Entity\User:
+    operations:
+      ApiPlatform\Metadata\GetCollection: ~
+      ApiPlatform\Metadata\Get: ~
+      ApiPlatform\Metadata\Post:
+        input: App\Dto\Input\UserCreateDto
+        processor: App\State\UserCreateProcessor
+        read: false
+        messenger: false
+      ApiPlatform\Metadata\Patch:
+        input: App\Dto\Input\UserUpdateDto
+        processor: App\State\UserPatchProcessor
+      ApiPlatform\Metadata\Delete:
+        processor: App\State\UserDeleteProcessor
